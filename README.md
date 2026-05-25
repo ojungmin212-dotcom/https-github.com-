@@ -57,6 +57,12 @@ Python program.
 The helper process protocol is documented in `docs/bridge_protocol.md`.
 The native 32-bit helper draft is in `native/namu_bridge`.
 
+Open the desktop controller:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools\open_controller.ps1
+```
+
 You can test the bridge path with the mock helper:
 
 ```powershell
