@@ -4,7 +4,7 @@ from pathlib import Path
 import shutil
 import subprocess
 
-from .settings import NamuQvSettings, load_dotenv_file
+from .settings import NamuQvSettings, load_dotenv_file, python_architecture
 
 
 def main() -> None:
@@ -17,7 +17,16 @@ def main() -> None:
     ]
     settings = NamuQvSettings.from_env()
     missing = settings.missing_items()
+    wmca_arch = settings.wmca_architecture()
+    py_arch = python_architecture()
     checks.append(("Namu QV settings", not missing))
+    checks.append(("wmca.dll found", settings.wmca_dll_path().exists()))
+    checks.append(
+        (
+            "Direct Python DLL architecture match",
+            wmca_arch is None or wmca_arch == py_arch,
+        )
+    )
     checks.append(("Live trading disabled", not settings.live_trading_enabled))
 
     print("APIF readiness check")
@@ -31,6 +40,16 @@ def main() -> None:
         print("Missing or incomplete Namu settings:")
         for item in missing:
             print(f"- {item}")
+
+    print("")
+    print(f"Python architecture: {py_arch}")
+    print(f"wmca.dll path: {settings.wmca_dll_path()}")
+    print(f"wmca.dll architecture: {wmca_arch or 'not found'}")
+    if wmca_arch and wmca_arch != py_arch:
+        print(
+            "Direct DLL loading is not compatible. Use 32-bit Python or a "
+            "32-bit helper process for the Namu API bridge."
+        )
 
     print("")
     if settings.live_trading_enabled:

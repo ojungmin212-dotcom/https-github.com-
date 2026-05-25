@@ -48,6 +48,11 @@ APIF_ENABLE_LIVE_TRADING=NO
 
 Keep `APIF_ENABLE_LIVE_TRADING=NO` until mock trading has been verified.
 
+The downloaded Namu OpenAPI folder should contain `bin/wmca.dll`. If that DLL is
+32-bit and your Python is 64-bit, direct DLL loading will not work. In that case,
+use either 32-bit Python or a small 32-bit helper process that talks to this
+Python program.
+
 ## Run tests
 
 ```powershell

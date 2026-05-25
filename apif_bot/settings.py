@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 import os
 from pathlib import Path
+import platform
+import struct
 
 
 @dataclass(frozen=True)
@@ -33,11 +35,39 @@ class NamuQvSettings:
             missing.append("APIF_NAMU_QV_PATH")
         elif not self.module_path.exists():
             missing.append("APIF_NAMU_QV_PATH points to a missing path")
+        elif not self.wmca_dll_path().exists():
+            missing.append("APIF_NAMU_QV_PATH does not contain bin/wmca.dll")
         if not self.account_no:
             missing.append("APIF_NAMU_ACCOUNT_NO")
         if not self.account_product_code:
             missing.append("APIF_NAMU_ACCOUNT_PRODUCT_CODE")
         return missing
+
+    def wmca_dll_path(self) -> Path:
+        if self.module_path is None:
+            return Path("bin") / "wmca.dll"
+        return self.module_path / "bin" / "wmca.dll"
+
+    def wmca_architecture(self) -> str | None:
+        dll_path = self.wmca_dll_path()
+        if not dll_path.exists():
+            return None
+        return pe_architecture(dll_path)
+
+
+def pe_architecture(path: Path) -> str:
+    data = path.read_bytes()
+    pe_offset = struct.unpack_from("<I", data, 0x3C)[0]
+    machine = struct.unpack_from("<H", data, pe_offset + 4)[0]
+    if machine == 0x14C:
+        return "x86"
+    if machine == 0x8664:
+        return "x64"
+    return f"unknown:0x{machine:X}"
+
+
+def python_architecture() -> str:
+    return "x64" if platform.architecture()[0] == "64bit" else "x86"
 
 
 def load_dotenv_file(path: Path = Path(".env")) -> None:
