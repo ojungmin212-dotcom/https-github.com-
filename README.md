@@ -43,6 +43,7 @@ on your PC and fill in local values there:
 APIF_NAMU_QV_PATH=
 APIF_NAMU_ACCOUNT_NO=
 APIF_NAMU_ACCOUNT_PRODUCT_CODE=
+APIF_NAMU_BRIDGE_COMMAND=
 APIF_ENABLE_LIVE_TRADING=NO
 ```
 
@@ -52,6 +53,20 @@ The downloaded Namu OpenAPI folder should contain `bin/wmca.dll`. If that DLL is
 32-bit and your Python is 64-bit, direct DLL loading will not work. In that case,
 use either 32-bit Python or a small 32-bit helper process that talks to this
 Python program.
+
+The helper process protocol is documented in `docs/bridge_protocol.md`.
+
+You can test the bridge path with the mock helper:
+
+```powershell
+python -m apif_bot.cli --quote-source namu --max-ticks 1 --config config/trade_plan.example.json
+```
+
+For the mock helper, set this local `.env` value first:
+
+```text
+APIF_NAMU_BRIDGE_COMMAND=python apif_bot/mock_bridge.py
+```
 
 ## Run tests
 

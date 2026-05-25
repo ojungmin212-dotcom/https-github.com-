@@ -33,6 +33,7 @@ class SettingsTest(unittest.TestCase):
             module_path=None,
             account_no="",
             account_product_code="",
+            bridge_command="",
             live_trading_enabled=False,
         )
 
@@ -40,6 +41,7 @@ class SettingsTest(unittest.TestCase):
             settings.missing_items(),
             [
                 "APIF_NAMU_QV_PATH",
+                "APIF_NAMU_BRIDGE_COMMAND",
                 "APIF_NAMU_ACCOUNT_NO",
                 "APIF_NAMU_ACCOUNT_PRODUCT_CODE",
             ],

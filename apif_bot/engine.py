@@ -43,12 +43,17 @@ class TradingEngine:
         quote = self.price_provider.get_quote(self.plan.symbol)
         return self._evaluate_quote(quote)
 
-    def run_forever(self) -> None:
+    def run_forever(self, max_ticks: int | None = None) -> None:
         print("Auto monitor started. Press Ctrl+C to stop.")
+        ticks = 0
         while self.status.state != PositionState.FINISHED:
             try:
                 message = self.evaluate_once()
                 print(message)
+                ticks += 1
+                if max_ticks is not None and ticks >= max_ticks:
+                    print(f"Max ticks reached: {max_ticks}")
+                    break
                 sleep(self.plan.poll_seconds)
             except SafetyViolation as exc:
                 print(f"Safety stop: {exc}")

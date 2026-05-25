@@ -11,6 +11,7 @@ class DoctorSettingsTest(unittest.TestCase):
             module_path=Path("C:/openapi.nm"),
             account_no="123",
             account_product_code="01",
+            bridge_command="bridge.exe",
             live_trading_enabled=False,
         )
 
@@ -22,6 +23,7 @@ class DoctorSettingsTest(unittest.TestCase):
                 module_path=Path(temp_dir),
                 account_no="123",
                 account_product_code="01",
+                bridge_command="bridge.exe",
                 live_trading_enabled=False,
             )
 

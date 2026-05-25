@@ -21,6 +21,7 @@ def main() -> None:
     py_arch = python_architecture()
     checks.append(("Namu QV settings", not missing))
     checks.append(("wmca.dll found", settings.wmca_dll_path().exists()))
+    checks.append(("Bridge command configured", bool(settings.bridge_command)))
     checks.append(
         (
             "Direct Python DLL architecture match",
@@ -45,6 +46,7 @@ def main() -> None:
     print(f"Python architecture: {py_arch}")
     print(f"wmca.dll path: {settings.wmca_dll_path()}")
     print(f"wmca.dll architecture: {wmca_arch or 'not found'}")
+    print(f"Bridge command: {settings.bridge_command or 'not configured'}")
     if wmca_arch and wmca_arch != py_arch:
         print(
             "Direct DLL loading is not compatible. Use 32-bit Python or a "

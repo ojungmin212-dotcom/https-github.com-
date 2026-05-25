@@ -12,6 +12,7 @@ class NamuQvSettings:
     module_path: Path | None
     account_no: str
     account_product_code: str
+    bridge_command: str
     live_trading_enabled: bool
 
     @classmethod
@@ -23,6 +24,7 @@ class NamuQvSettings:
             account_product_code=os.getenv(
                 "APIF_NAMU_ACCOUNT_PRODUCT_CODE", ""
             ).strip(),
+            bridge_command=os.getenv("APIF_NAMU_BRIDGE_COMMAND", "").strip(),
             live_trading_enabled=os.getenv(
                 "APIF_ENABLE_LIVE_TRADING", "NO"
             ).strip().upper()
@@ -30,6 +32,9 @@ class NamuQvSettings:
         )
 
     def missing_items(self) -> list[str]:
+        return self.missing_connection_items() + self.missing_account_items()
+
+    def missing_connection_items(self) -> list[str]:
         missing = []
         if self.module_path is None:
             missing.append("APIF_NAMU_QV_PATH")
@@ -37,6 +42,12 @@ class NamuQvSettings:
             missing.append("APIF_NAMU_QV_PATH points to a missing path")
         elif not self.wmca_dll_path().exists():
             missing.append("APIF_NAMU_QV_PATH does not contain bin/wmca.dll")
+        if not self.bridge_command:
+            missing.append("APIF_NAMU_BRIDGE_COMMAND")
+        return missing
+
+    def missing_account_items(self) -> list[str]:
+        missing = []
         if not self.account_no:
             missing.append("APIF_NAMU_ACCOUNT_NO")
         if not self.account_product_code:
