@@ -57,7 +57,7 @@ Python program.
 The helper process protocol is documented in `docs/bridge_protocol.md`.
 The native 32-bit helper draft is in `native/namu_bridge`.
 
-Open the desktop controller:
+데스크톱 컨트롤러 열기:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File tools\open_controller.ps1
