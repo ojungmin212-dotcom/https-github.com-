@@ -19,6 +19,7 @@ from .settings import NamuQvSettings, load_dotenv_file
 ROOT = Path(__file__).resolve().parents[1]
 BRIDGE_EXE = ROOT / "native" / "namu_bridge" / "bin" / "Win32" / "Release" / "namu_bridge.exe"
 BUILD_SCRIPT = ROOT / "native" / "namu_bridge" / "build.ps1"
+APP_TITLE = "오박사의 주식자동매매 대박 컨트롤러"
 
 
 class DesktopApp(tk.Tk):
@@ -26,10 +27,10 @@ class DesktopApp(tk.Tk):
         super().__init__()
         load_dotenv_file(ROOT / ".env")
 
-        self.title("APIF 나무 자동매매 컨트롤러")
-        self.geometry("880x720")
-        self.minsize(820, 640)
-        self.configure(bg="#e9eef5")
+        self.title(APP_TITLE)
+        self.geometry("900x740")
+        self.minsize(840, 660)
+        self.configure(bg="#0b1020")
 
         settings = NamuQvSettings.from_env()
         self.qv_path = tk.StringVar(value=str(settings.module_path or ""))
@@ -52,44 +53,54 @@ class DesktopApp(tk.Tk):
         self.option_add("*Font", ("Malgun Gothic", 10))
 
         style.configure(
+            "Dark.TEntry",
+            fieldbackground="#111827",
+            background="#111827",
+            foreground="#f8fafc",
+            insertcolor="#f8fafc",
+            bordercolor="#334155",
+            lightcolor="#475569",
+            darkcolor="#020617",
+            padding=(8, 7),
+        )
+        style.map(
+            "Dark.TEntry",
+            fieldbackground=[("focus", "#172033")],
+            bordercolor=[("focus", "#22d3ee")],
+        )
+        style.configure(
             "Primary.TButton",
             font=("Malgun Gothic", 10, "bold"),
             padding=(16, 10),
-            foreground="#ffffff",
-            background="#1f6feb",
-            bordercolor="#174ea6",
-            lightcolor="#3b82f6",
-            darkcolor="#174ea6",
+            foreground="#07111f",
+            background="#22d3ee",
+            bordercolor="#0891b2",
+            lightcolor="#67e8f9",
+            darkcolor="#0e7490",
         )
         style.map(
             "Primary.TButton",
-            background=[("active", "#2f81f7"), ("pressed", "#174ea6")],
+            background=[("active", "#67e8f9"), ("pressed", "#0891b2")],
         )
         style.configure(
             "Secondary.TButton",
             font=("Malgun Gothic", 10, "bold"),
             padding=(16, 10),
-            foreground="#132238",
-            background="#eef4ff",
-            bordercolor="#c7d7ef",
-            lightcolor="#ffffff",
-            darkcolor="#c7d7ef",
+            foreground="#e2e8f0",
+            background="#1e293b",
+            bordercolor="#334155",
+            lightcolor="#475569",
+            darkcolor="#020617",
         )
         style.map(
             "Secondary.TButton",
-            background=[("active", "#dceaff"), ("pressed", "#c7d7ef")],
-        )
-        style.configure(
-            "Status.TLabel",
-            font=("Malgun Gothic", 10, "bold"),
-            foreground="#102033",
-            background="#e9eef5",
+            background=[("active", "#334155"), ("pressed", "#111827")],
         )
 
     def _build_ui(self) -> None:
         self._build_header()
 
-        main = tk.Frame(self, bg="#e9eef5", padx=18, pady=16)
+        main = tk.Frame(self, bg="#0b1020", padx=18, pady=16)
         main.pack(fill=tk.BOTH, expand=True)
         main.columnconfigure(0, weight=1)
         main.rowconfigure(4, weight=1)
@@ -97,7 +108,6 @@ class DesktopApp(tk.Tk):
         connection_card = self._card(main)
         connection_card.grid(row=0, column=0, sticky="ew", pady=(0, 14))
         connection_card.inner.columnconfigure(1, weight=1)
-
         self._card_title(connection_card.inner, "연결 정보", "나무 OpenAPI 로그인과 DLL 연결을 확인합니다.")
         self._row(connection_card.inner, 1, "OpenAPI 폴더", self.qv_path, show=None)
         self._row(connection_card.inner, 2, "HTS/OpenAPI 아이디", self.user_id, show=None)
@@ -107,8 +117,8 @@ class DesktopApp(tk.Tk):
         action_card = self._card(main)
         action_card.grid(row=1, column=0, sticky="ew", pady=(0, 14))
         self._card_title(action_card.inner, "제어 버튼", "실제 주문은 아직 막아두고, 연결과 현재가만 테스트합니다.")
-        actions = tk.Frame(action_card.inner, bg="#ffffff")
-        actions.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(8, 2))
+        actions = tk.Frame(action_card.inner, bg="#111827")
+        actions.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(10, 2))
         ttk.Button(actions, text="보조 프로그램 빌드", style="Secondary.TButton", command=self.build_helper).pack(side=tk.LEFT, padx=(0, 10))
         ttk.Button(actions, text="DLL 확인", style="Secondary.TButton", command=self.check_dll).pack(side=tk.LEFT, padx=(0, 10))
         ttk.Button(actions, text="현재가 조회", style="Primary.TButton", command=self.get_quote).pack(side=tk.LEFT, padx=(0, 10))
@@ -125,16 +135,16 @@ class DesktopApp(tk.Tk):
         self._small_row(trading_card.inner, 2, 2, "매도가", self.sell_price)
         self._small_row(trading_card.inner, 3, 0, "조회 간격(초)", self.poll_seconds)
 
-        status_bar = tk.Frame(main, bg="#dfe7f1", highlightthickness=1, highlightbackground="#c7d2df")
+        status_bar = tk.Frame(main, bg="#101827", highlightthickness=1, highlightbackground="#243244")
         status_bar.grid(row=3, column=0, sticky="ew", pady=(0, 12))
         tk.Label(
             status_bar,
             textvariable=self.status_text,
-            bg="#dfe7f1",
-            fg="#102033",
+            bg="#101827",
+            fg="#67e8f9",
             font=("Malgun Gothic", 10, "bold"),
             padx=12,
-            pady=8,
+            pady=9,
         ).pack(side=tk.LEFT)
 
         log_card = self._card(main)
@@ -148,7 +158,7 @@ class DesktopApp(tk.Tk):
             wrap=tk.WORD,
             borderwidth=0,
             relief=tk.FLAT,
-            bg="#101720",
+            bg="#020617",
             fg="#d7e2f1",
             insertbackground="#d7e2f1",
             font=("Cascadia Mono", 10),
@@ -159,40 +169,40 @@ class DesktopApp(tk.Tk):
         self._log("컨트롤러가 열렸습니다. 비밀번호는 저장하지 않습니다.")
 
     def _build_header(self) -> None:
-        header = tk.Canvas(self, height=112, bg="#101720", highlightthickness=0)
+        header = tk.Canvas(self, height=122, bg="#020617", highlightthickness=0)
         header.pack(fill=tk.X)
-        header.create_rectangle(0, 0, 880, 112, fill="#101720", outline="")
-        header.create_rectangle(0, 78, 880, 112, fill="#162236", outline="")
-        header.create_rectangle(0, 0, 10, 112, fill="#20c7b5", outline="")
-        header.create_oval(690, -80, 950, 170, fill="#1f6feb", outline="")
-        header.create_oval(742, -44, 920, 134, fill="#20c7b5", outline="")
-        header.create_text(
-            34,
-            34,
-            anchor="w",
-            text="APIF 나무 자동매매 컨트롤러",
-            fill="#ffffff",
-            font=("Malgun Gothic", 20, "bold"),
-        )
+        header.create_rectangle(0, 0, 1200, 122, fill="#020617", outline="")
+        header.create_rectangle(0, 86, 1200, 122, fill="#08111f", outline="")
+        header.create_rectangle(0, 0, 10, 122, fill="#22d3ee", outline="")
+        header.create_oval(680, -120, 1040, 240, fill="#0f766e", outline="")
+        header.create_oval(760, -86, 1010, 164, fill="#1d4ed8", outline="")
         header.create_text(
             36,
-            70,
+            36,
+            anchor="w",
+            text=APP_TITLE,
+            fill="#f8fafc",
+            font=("Malgun Gothic", 21, "bold"),
+        )
+        header.create_text(
+            38,
+            74,
             anchor="w",
             text="현재가 조회와 모의 감시를 안전하게 제어합니다",
-            fill="#b8c7d9",
+            fill="#94a3b8",
             font=("Malgun Gothic", 10),
         )
 
     def _card(self, parent: tk.Widget) -> tk.Frame:
-        outer = tk.Frame(parent, bg="#c8d3e0")
+        outer = tk.Frame(parent, bg="#020617")
         inner = tk.Frame(
             outer,
-            bg="#ffffff",
+            bg="#111827",
             padx=18,
             pady=16,
             highlightthickness=1,
-            highlightbackground="#d7dee8",
-            highlightcolor="#d7dee8",
+            highlightbackground="#243244",
+            highlightcolor="#243244",
         )
         inner.pack(fill=tk.BOTH, expand=True, padx=(0, 4), pady=(0, 4))
         outer.inner = inner  # type: ignore[attr-defined]
@@ -202,15 +212,15 @@ class DesktopApp(tk.Tk):
         tk.Label(
             parent,
             text=title,
-            bg="#ffffff",
-            fg="#102033",
+            bg="#111827",
+            fg="#f8fafc",
             font=("Malgun Gothic", 13, "bold"),
         ).grid(row=0, column=0, sticky="w")
         tk.Label(
             parent,
             text=subtitle,
-            bg="#ffffff",
-            fg="#697386",
+            bg="#111827",
+            fg="#94a3b8",
             font=("Malgun Gothic", 9),
         ).grid(row=0, column=1, sticky="e", padx=(16, 0))
 
@@ -225,12 +235,13 @@ class DesktopApp(tk.Tk):
         tk.Label(
             parent,
             text=label,
-            bg="#ffffff",
-            fg="#344054",
+            bg="#111827",
+            fg="#cbd5e1",
             font=("Malgun Gothic", 10, "bold"),
         ).grid(row=row, column=0, sticky="w", pady=7)
-        entry = ttk.Entry(parent, textvariable=variable, show=show, font=("Malgun Gothic", 10))
-        entry.grid(row=row, column=1, sticky="ew", pady=7, padx=(14, 0), ipady=4)
+        ttk.Entry(parent, textvariable=variable, show=show, style="Dark.TEntry").grid(
+            row=row, column=1, sticky="ew", pady=7, padx=(14, 0)
+        )
 
     def _small_row(
         self,
@@ -243,12 +254,12 @@ class DesktopApp(tk.Tk):
         tk.Label(
             parent,
             text=label,
-            bg="#ffffff",
-            fg="#344054",
+            bg="#111827",
+            fg="#cbd5e1",
             font=("Malgun Gothic", 10, "bold"),
         ).grid(row=row, column=column, sticky="w", pady=7)
-        ttk.Entry(parent, textvariable=variable, font=("Malgun Gothic", 10)).grid(
-            row=row, column=column + 1, sticky="ew", pady=7, padx=(12, 22), ipady=4
+        ttk.Entry(parent, textvariable=variable, style="Dark.TEntry").grid(
+            row=row, column=column + 1, sticky="ew", pady=7, padx=(12, 22)
         )
 
     def build_helper(self) -> None:
