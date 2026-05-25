@@ -10,20 +10,20 @@ from .price_provider import CsvPriceProvider, ManualPriceProvider
 
 
 def build_parser() -> ArgumentParser:
-    parser = ArgumentParser(description="사용자 지정가 기반 자동 매수/매도 초안")
+    parser = ArgumentParser(description="User-defined buy/sell auto trading draft")
     parser.add_argument(
         "--config",
         default="config/trade_plan.example.json",
-        help="매매 설정 JSON 파일 경로",
+        help="Trading plan JSON path",
     )
     parser.add_argument(
         "--price-csv",
-        help="모의 현재가 CSV 경로. 없으면 실행 중 직접 현재가를 입력합니다.",
+        help="Simulated quote CSV path. Without it, enter prices manually.",
     )
     parser.add_argument(
         "--order-log",
         default="logs/orders.csv",
-        help="모의 주문 기록 파일 경로",
+        help="Dry-run order log path",
     )
     return parser
 

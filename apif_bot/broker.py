@@ -7,6 +7,7 @@ import csv
 import uuid
 
 from .models import OrderRequest, OrderResult, TradingMode
+from .settings import NamuQvSettings
 
 
 class BrokerClient(ABC):
@@ -44,14 +45,15 @@ class DryRunBroker(BrokerClient):
         )
 
 
-class NamuQvBroker(BrokerClient):
-    def place_order(self, request: OrderRequest) -> OrderResult:
-        raise NotImplementedError(
-            "Install the Namu QV Open API module and official order spec first."
-        )
-
-
 def broker_for_mode(mode: TradingMode, log_path: Path) -> BrokerClient:
     if mode == TradingMode.DRY_RUN:
         return DryRunBroker(log_path=log_path)
-    return NamuQvBroker()
+    settings = NamuQvSettings.from_env()
+    if not settings.live_trading_enabled:
+        raise RuntimeError(
+            "LIVE mode is blocked. Set APIF_ENABLE_LIVE_TRADING=YES only after "
+            "mock trading and safety checks are complete."
+        )
+    from .namu_qv import NamuQvBroker, NamuQvSession
+
+    return NamuQvBroker(NamuQvSession(settings))

@@ -3,3 +3,7 @@ __pycache__/
 logs/
 .venv/
 venv/
+.env
+.env.*
+!.env.example
+STOP_TRADING

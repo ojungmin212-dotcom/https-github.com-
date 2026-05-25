@@ -27,7 +27,7 @@ class CsvPriceProvider(PriceProvider):
 
     def get_quote(self, symbol: str) -> Quote:
         if self.index >= len(self.rows):
-            raise StopIteration("CSV 가격 데이터가 끝났습니다.")
+            raise StopIteration("CSV price data is finished.")
         price = self.rows[self.index]
         self.index += 1
         return Quote(symbol=symbol, price=price, received_at=datetime.now())
@@ -37,9 +37,9 @@ class CsvPriceProvider(PriceProvider):
         with path.open("r", newline="", encoding="utf-8") as fp:
             reader = csv.DictReader(fp)
             if "price" not in reader.fieldnames:
-                raise ValueError("CSV에는 price 컬럼이 필요합니다.")
+                raise ValueError("CSV must include a price column.")
             prices = [int(row["price"]) for row in reader]
 
         if not prices:
-            raise ValueError("CSV 가격 데이터가 비어 있습니다.")
+            raise ValueError("CSV price data is empty.")
         return prices

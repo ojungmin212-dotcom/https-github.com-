@@ -28,6 +28,26 @@ The program now checks safety rules before it accepts a plan or places an order.
 The emergency stop file defaults to `STOP_TRADING`. Creating that file in the
 project folder is enough to stop new orders.
 
+## Step 3: API readiness
+
+Before connecting the real NH/Namu QV Open API, run the readiness check:
+
+```powershell
+python -m apif_bot.doctor
+```
+
+Secrets and account values must stay out of GitHub. Copy `.env.example` to `.env`
+on your PC and fill in local values there:
+
+```text
+APIF_NAMU_QV_PATH=
+APIF_NAMU_ACCOUNT_NO=
+APIF_NAMU_ACCOUNT_PRODUCT_CODE=
+APIF_ENABLE_LIVE_TRADING=NO
+```
+
+Keep `APIF_ENABLE_LIVE_TRADING=NO` until mock trading has been verified.
+
 ## Run tests
 
 ```powershell
