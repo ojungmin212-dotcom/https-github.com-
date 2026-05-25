@@ -16,6 +16,7 @@ class TradingEngineTest(unittest.TestCase):
                 symbol="005930",
                 name="Samsung Electronics",
                 buy_price=70000,
+                stop_loss_price=68000,
                 sell_price=75000,
                 quantity=1,
             )
@@ -28,6 +29,42 @@ class TradingEngineTest(unittest.TestCase):
             self.assertIn("[BUY_TRIGGERED]", messages[2])
             self.assertIn("[SELL_TRIGGERED]", messages[4])
             self.assertEqual(engine.status.state, PositionState.FINISHED)
+
+    def test_stop_loss_sells_after_buy_when_price_falls(self) -> None:
+        with TemporaryDirectory() as temp_dir:
+            prices = Path(temp_dir) / "prices.csv"
+            prices.write_text("price\n70000\n67000\n", encoding="utf-8")
+            plan = TradingPlan(
+                symbol="005930",
+                name="Samsung Electronics",
+                buy_price=70000,
+                stop_loss_price=68000,
+                sell_price=75000,
+                quantity=1,
+            )
+            provider = CsvPriceProvider(prices)
+            broker = DryRunBroker(Path(temp_dir) / "orders.csv")
+            engine = TradingEngine(plan, provider, broker)
+
+            buy_message = engine.evaluate_once()
+            stop_message = engine.evaluate_once()
+
+            self.assertIn("[BUY_TRIGGERED]", buy_message)
+            self.assertIn("[STOP_LOSS_TRIGGERED]", stop_message)
+            self.assertEqual(engine.status.state, PositionState.FINISHED)
+
+    def test_rejects_stop_loss_above_buy_price(self) -> None:
+        plan = TradingPlan(
+            symbol="005930",
+            name="Samsung Electronics",
+            buy_price=70000,
+            stop_loss_price=71000,
+            sell_price=75000,
+            quantity=1,
+        )
+
+        with self.assertRaises(ValueError):
+            plan.validate()
 
     def test_rejects_symbol_outside_allow_list(self) -> None:
         plan = TradingPlan(

@@ -45,6 +45,7 @@ class DesktopApp(tk.Tk):
         self.cert_password = tk.StringVar()
         self.symbol = tk.StringVar(value="005930")
         self.buy_price = tk.StringVar(value="70000")
+        self.stop_loss_price = tk.StringVar(value="68000")
         self.sell_price = tk.StringVar(value="75000")
         self.quantity = tk.StringVar(value="1")
         self.poll_seconds = tk.StringVar(value="3")
@@ -163,8 +164,9 @@ class DesktopApp(tk.Tk):
         self._small_row(trading_card.inner, 1, 0, "종목코드", self.symbol)
         self._small_row(trading_card.inner, 1, 2, "수량", self.quantity)
         self._small_row(trading_card.inner, 2, 0, "매수가", self.buy_price)
-        self._small_row(trading_card.inner, 2, 2, "매도가", self.sell_price)
-        self._small_row(trading_card.inner, 3, 0, "조회 간격(초)", self.poll_seconds)
+        self._small_row(trading_card.inner, 2, 2, "손절가", self.stop_loss_price)
+        self._small_row(trading_card.inner, 3, 0, "매도가", self.sell_price)
+        self._small_row(trading_card.inner, 3, 2, "조회 간격(초)", self.poll_seconds)
 
         status_bar = tk.Frame(main, bg="#202020", highlightthickness=1, highlightbackground="#3a3a3a")
         status_bar.grid(row=3, column=0, sticky="ew", pady=(0, 12))
@@ -398,6 +400,11 @@ class DesktopApp(tk.Tk):
             symbol=self.symbol.get().strip(),
             name="",
             buy_price=int(self.buy_price.get()),
+            stop_loss_price=(
+                int(self.stop_loss_price.get())
+                if self.stop_loss_price.get().strip()
+                else None
+            ),
             sell_price=int(self.sell_price.get()),
             quantity=int(self.quantity.get()),
             poll_seconds=float(self.poll_seconds.get()),

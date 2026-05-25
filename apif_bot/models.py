@@ -50,6 +50,7 @@ class TradingPlan:
     buy_price: int
     sell_price: int
     quantity: int
+    stop_loss_price: int | None = None
     mode: TradingMode = TradingMode.DRY_RUN
     poll_seconds: float = 3.0
     safety: SafetyConfig = field(default_factory=SafetyConfig)
@@ -63,6 +64,11 @@ class TradingPlan:
             raise ValueError("sell_price must be greater than 0.")
         if self.sell_price <= self.buy_price:
             raise ValueError("sell_price must be greater than buy_price.")
+        if self.stop_loss_price is not None:
+            if self.stop_loss_price <= 0:
+                raise ValueError("stop_loss_price must be greater than 0.")
+            if self.stop_loss_price >= self.buy_price:
+                raise ValueError("stop_loss_price must be lower than buy_price.")
         if self.quantity <= 0:
             raise ValueError("quantity must be greater than 0.")
         if self.poll_seconds < 1:
@@ -76,6 +82,11 @@ class TradingPlan:
             buy_price=int(data["buy_price"]),
             sell_price=int(data["sell_price"]),
             quantity=int(data["quantity"]),
+            stop_loss_price=(
+                int(data["stop_loss_price"])
+                if data.get("stop_loss_price") is not None
+                else None
+            ),
             mode=TradingMode(data.get("mode", TradingMode.DRY_RUN.value)),
             poll_seconds=float(data.get("poll_seconds", 3.0)),
             safety=SafetyConfig.from_dict(data.get("safety")),

@@ -86,6 +86,25 @@ class TradingEngine:
             )
 
         if self.status.state == PositionState.HOLDING:
+            if (
+                self.plan.stop_loss_price is not None
+                and quote.price <= self.plan.stop_loss_price
+            ):
+                result = self._place_order(
+                    OrderRequest(
+                        symbol=self.plan.symbol,
+                        side=Side.SELL,
+                        price=self.plan.stop_loss_price,
+                        quantity=self.plan.quantity,
+                    )
+                )
+                self.status.sell_order_id = result.order_id
+                self.status.state = PositionState.FINISHED
+                return (
+                    f"[STOP_LOSS_TRIGGERED] quote {quote.price:,}, "
+                    f"stop {self.plan.stop_loss_price:,}, order_id {result.order_id}"
+                )
+
             if quote.price >= self.plan.sell_price:
                 result = self._place_order(
                     OrderRequest(
@@ -102,6 +121,12 @@ class TradingEngine:
                     f"limit {self.plan.sell_price:,}, order_id {result.order_id}"
                 )
 
+            if self.plan.stop_loss_price is not None:
+                return (
+                    f"[WAIT_SELL] quote {quote.price:,}, "
+                    f"target {self.plan.sell_price:,}, "
+                    f"stop {self.plan.stop_loss_price:,}"
+                )
             return (
                 f"[WAIT_SELL] quote {quote.price:,}, "
                 f"target {self.plan.sell_price:,}"

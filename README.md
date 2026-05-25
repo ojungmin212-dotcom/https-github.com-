@@ -102,6 +102,7 @@ python -m apif_bot.cli --quote-source namu --config config/trade_plan.live_ready
 ```
 
 이 설정도 `DRY_RUN`입니다. 실제 주문은 보내지 않고 모의 주문 로그만 남깁니다.
+손절가 이하로 떨어지면 목표 매도가를 기다리지 않고 손절 매도 조건으로 처리합니다.
 
 ## Example config
 
@@ -110,6 +111,7 @@ python -m apif_bot.cli --quote-source namu --config config/trade_plan.live_ready
   "symbol": "005930",
   "name": "Samsung Electronics",
   "buy_price": 70000,
+  "stop_loss_price": 68000,
   "sell_price": 75000,
   "quantity": 1,
   "mode": "DRY_RUN",

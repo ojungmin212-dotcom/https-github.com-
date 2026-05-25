@@ -2,6 +2,7 @@
   "symbol": "005930",
   "name": "Samsung Electronics",
   "buy_price": 70000,
+  "stop_loss_price": 68000,
   "sell_price": 75000,
   "quantity": 1,
   "mode": "DRY_RUN",
