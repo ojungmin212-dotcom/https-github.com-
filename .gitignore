@@ -7,3 +7,5 @@ venv/
 .env.*
 !.env.example
 STOP_TRADING
+native/**/bin/
+native/**/obj/

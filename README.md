@@ -55,6 +55,7 @@ use either 32-bit Python or a small 32-bit helper process that talks to this
 Python program.
 
 The helper process protocol is documented in `docs/bridge_protocol.md`.
+The native 32-bit helper draft is in `native/namu_bridge`.
 
 You can test the bridge path with the mock helper:
 

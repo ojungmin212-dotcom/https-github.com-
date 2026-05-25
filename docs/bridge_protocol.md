@@ -37,6 +37,9 @@ Response:
 The real helper should call `wmcaQuery()` with `IVWUTKMST04.UNT`, `KRX`, or `NXT`
 and return `stck_prpr` as the integer price.
 
+The native helper draft lives in `native/namu_bridge`. It is intentionally scoped
+to quote lookup first.
+
 ## Order
 
 Request:
