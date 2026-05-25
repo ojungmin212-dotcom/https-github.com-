@@ -1,0 +1,18 @@
+{
+  "symbol": "005930",
+  "name": "삼성전자",
+  "buy_price": 70000,
+  "sell_price": 75000,
+  "quantity": 1,
+  "mode": "DRY_RUN",
+  "poll_seconds": 3,
+  "safety": {
+    "allowed_symbols": ["005930"],
+    "max_order_amount": 1000000,
+    "max_quantity_per_order": 10,
+    "require_market_hours": false,
+    "market_start": "09:00",
+    "market_end": "15:20",
+    "stop_file": "STOP_TRADING"
+  }
+}
