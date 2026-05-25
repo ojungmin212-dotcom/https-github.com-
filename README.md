@@ -93,6 +93,16 @@ python -m apif_bot.cli --config config/trade_plan.example.json --price-csv tests
 python -m apif_bot.cli --config config/trade_plan.example.json
 ```
 
+## Live-ready monitoring
+
+실전 전 감시용 설정은 `config/trade_plan.live_ready.json`입니다.
+
+```powershell
+python -m apif_bot.cli --quote-source namu --config config/trade_plan.live_ready.json
+```
+
+이 설정도 `DRY_RUN`입니다. 실제 주문은 보내지 않고 모의 주문 로그만 남깁니다.
+
 ## Example config
 
 ```json

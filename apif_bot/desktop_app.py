@@ -8,6 +8,7 @@ import subprocess
 import threading
 import tkinter as tk
 import tkinter.font as tkfont
+from time import sleep
 from tkinter import messagebox, ttk
 
 from .broker import DryRunBroker
@@ -21,6 +22,7 @@ ROOT = Path(__file__).resolve().parents[1]
 BRIDGE_EXE = ROOT / "native" / "namu_bridge" / "bin" / "Win32" / "Release" / "namu_bridge.exe"
 BUILD_SCRIPT = ROOT / "native" / "namu_bridge" / "build.ps1"
 APP_TITLE = "오박사의 주식자동매매 대박 컨트롤러"
+STOP_FILE = ROOT / "STOP_TRADING"
 
 
 class DesktopApp(tk.Tk):
@@ -47,6 +49,7 @@ class DesktopApp(tk.Tk):
         self.quantity = tk.StringVar(value="1")
         self.poll_seconds = tk.StringVar(value="3")
         self.status_text = tk.StringVar(value="대기 중")
+        self.monitor_stop_event = threading.Event()
 
         self._configure_style()
         self._build_ui()
@@ -140,11 +143,17 @@ class DesktopApp(tk.Tk):
         action_card.grid(row=1, column=0, sticky="ew", pady=(0, 14))
         self._card_title(action_card.inner, "제어 버튼", "실제 주문은 아직 막아두고, 연결과 현재가만 테스트합니다.")
         actions = tk.Frame(action_card.inner, bg="#242424")
-        actions.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(10, 2))
+        actions.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(10, 6))
         ttk.Button(actions, text="보조 프로그램 빌드", style="Secondary.TButton", command=self.build_helper).pack(side=tk.LEFT, padx=(0, 10))
         ttk.Button(actions, text="DLL 확인", style="Secondary.TButton", command=self.check_dll).pack(side=tk.LEFT, padx=(0, 10))
         ttk.Button(actions, text="현재가 조회", style="Primary.TButton", command=self.get_quote).pack(side=tk.LEFT, padx=(0, 10))
-        ttk.Button(actions, text="모의 감시 실행", style="Primary.TButton", command=self.run_dry_monitor).pack(side=tk.LEFT)
+        ttk.Button(actions, text="감시 1회 점검", style="Primary.TButton", command=self.run_dry_monitor).pack(side=tk.LEFT)
+        safety_actions = tk.Frame(action_card.inner, bg="#242424")
+        safety_actions.grid(row=2, column=0, columnspan=2, sticky="ew", pady=(6, 2))
+        ttk.Button(safety_actions, text="감시 시작", style="Primary.TButton", command=self.start_monitor).pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Button(safety_actions, text="감시 중지", style="Secondary.TButton", command=self.stop_monitor).pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Button(safety_actions, text="비상정지", style="Secondary.TButton", command=self.emergency_stop).pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Button(safety_actions, text="비상정지 해제", style="Secondary.TButton", command=self.clear_emergency_stop).pack(side=tk.LEFT)
 
         trading_card = self._card(main)
         trading_card.grid(row=2, column=0, sticky="ew", pady=(0, 14))
@@ -302,7 +311,28 @@ class DesktopApp(tk.Tk):
         )
 
     def run_dry_monitor(self) -> None:
-        self._run_background("모의 감시 실행", self._run_dry_monitor)
+        self._run_background("감시 1회 점검", self._run_dry_monitor)
+
+    def start_monitor(self) -> None:
+        if self.monitor_stop_event.is_set():
+            self.monitor_stop_event.clear()
+        self._run_background("실전 감시 시작", self._run_monitor_loop)
+
+    def stop_monitor(self) -> None:
+        self.monitor_stop_event.set()
+        self.status_text.set("감시 중지 요청됨")
+        self._log("감시 중지를 요청했습니다.")
+
+    def emergency_stop(self) -> None:
+        STOP_FILE.write_text("STOP", encoding="utf-8")
+        self.monitor_stop_event.set()
+        self.status_text.set("비상정지 활성화")
+        self._log("비상정지 파일을 만들었습니다. 새 주문은 차단됩니다.")
+
+    def clear_emergency_stop(self) -> None:
+        STOP_FILE.unlink(missing_ok=True)
+        self.status_text.set("비상정지 해제")
+        self._log("비상정지를 해제했습니다.")
 
     def _build_helper(self) -> str:
         result = subprocess.run(
@@ -339,6 +369,23 @@ class DesktopApp(tk.Tk):
         return line
 
     def _run_dry_monitor(self) -> str:
+        engine = self._build_engine()
+        return engine.evaluate_once()
+
+    def _run_monitor_loop(self) -> str:
+        self.monitor_stop_event.clear()
+        engine = self._build_engine()
+        tick_count = 0
+        while not self.monitor_stop_event.is_set():
+            tick_count += 1
+            message = engine.evaluate_once()
+            self.after(0, lambda msg=message: self._log(msg))
+            if engine.status.state.value == "FINISHED":
+                return "매수와 매도 조건 처리가 완료되어 감시를 멈췄습니다."
+            sleep(max(float(self.poll_seconds.get()), 1.0))
+        return f"감시를 중지했습니다. 확인 횟수: {tick_count}"
+
+    def _build_engine(self) -> TradingEngine:
         settings = NamuQvSettings(
             module_path=Path(self.qv_path.get().strip()),
             account_no="",
@@ -360,7 +407,7 @@ class DesktopApp(tk.Tk):
             price_provider=provider,
             broker=DryRunBroker(ROOT / "logs" / "desktop_orders.csv"),
         )
-        return engine.evaluate_once()
+        return engine
 
     def _env(self) -> dict[str, str]:
         env = os.environ.copy()
