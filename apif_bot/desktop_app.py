@@ -104,8 +104,26 @@ class DesktopApp(tk.Tk):
     def _build_ui(self) -> None:
         self._build_header()
 
-        main = tk.Frame(self, bg="#171717", padx=18, pady=16)
-        main.pack(fill=tk.BOTH, expand=True)
+        shell = tk.Frame(self, bg="#171717")
+        shell.pack(fill=tk.BOTH, expand=True)
+
+        canvas = tk.Canvas(shell, bg="#171717", highlightthickness=0)
+        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        page_scroll = ttk.Scrollbar(shell, orient=tk.VERTICAL, command=canvas.yview)
+        page_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+        canvas.configure(yscrollcommand=page_scroll.set)
+
+        main = tk.Frame(canvas, bg="#171717", padx=18, pady=16)
+        main_window = canvas.create_window((0, 0), window=main, anchor="nw")
+        main.bind(
+            "<Configure>",
+            lambda event: canvas.configure(scrollregion=canvas.bbox("all")),
+        )
+        canvas.bind(
+            "<Configure>",
+            lambda event: canvas.itemconfigure(main_window, width=event.width),
+        )
+        canvas.bind_all("<MouseWheel>", lambda event: canvas.yview_scroll(int(-event.delta / 120), "units"))
         main.columnconfigure(0, weight=1)
         main.rowconfigure(4, weight=1)
 
@@ -156,8 +174,12 @@ class DesktopApp(tk.Tk):
         log_card.inner.rowconfigure(1, weight=1)
         log_card.inner.columnconfigure(0, weight=1)
         self._card_title(log_card.inner, "실행 기록", "조회 결과와 오류 메시지가 여기에 표시됩니다.")
+        log_body = tk.Frame(log_card.inner, bg="#111111")
+        log_body.grid(row=1, column=0, sticky="nsew", pady=(10, 0))
+        log_body.rowconfigure(0, weight=1)
+        log_body.columnconfigure(0, weight=1)
         self.output = tk.Text(
-            log_card.inner,
+            log_body,
             height=10,
             wrap=tk.WORD,
             borderwidth=0,
@@ -169,7 +191,10 @@ class DesktopApp(tk.Tk):
             padx=14,
             pady=12,
         )
-        self.output.grid(row=1, column=0, sticky="nsew", pady=(10, 0))
+        self.output.grid(row=0, column=0, sticky="nsew")
+        log_scroll = ttk.Scrollbar(log_body, orient=tk.VERTICAL, command=self.output.yview)
+        log_scroll.grid(row=0, column=1, sticky="ns")
+        self.output.configure(yscrollcommand=log_scroll.set)
         self._log("컨트롤러가 열렸습니다. 비밀번호는 저장하지 않습니다.")
 
     def _build_header(self) -> None:
