@@ -333,6 +333,16 @@ int main() {
             send_ok("{\"status\":\"dll_loaded\"}");
             return 0;
         }
+        if (command == "login") {
+            HWND hwnd = create_message_window();
+            if (!hwnd) {
+                throw std::runtime_error("Failed to create message window.");
+            }
+            WmcaClient client;
+            client.connect(hwnd);
+            send_ok("{\"status\":\"login_ok\"}");
+            return 0;
+        }
         if (command == "order") {
             send_error("Order handling is disabled in the native bridge draft.");
             return 0;

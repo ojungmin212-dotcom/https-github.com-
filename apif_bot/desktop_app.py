@@ -50,6 +50,9 @@ class DesktopApp(tk.Tk):
         self.quantity = tk.StringVar(value="1")
         self.poll_seconds = tk.StringVar(value="3")
         self.status_text = tk.StringVar(value="대기 중")
+        self.dll_state = tk.StringVar(value="DLL: 미확인")
+        self.login_state = tk.StringVar(value="로그인: 미확인")
+        self.quote_state = tk.StringVar(value="현재가: 미조회")
         self.monitor_stop_event = threading.Event()
 
         self._configure_style()
@@ -129,7 +132,7 @@ class DesktopApp(tk.Tk):
         )
         canvas.bind_all("<MouseWheel>", lambda event: canvas.yview_scroll(int(-event.delta / 120), "units"))
         main.columnconfigure(0, weight=1)
-        main.rowconfigure(4, weight=1)
+        main.rowconfigure(5, weight=1)
 
         connection_card = self._card(main)
         connection_card.grid(row=0, column=0, sticky="ew", pady=(0, 14))
@@ -147,6 +150,7 @@ class DesktopApp(tk.Tk):
         actions.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(10, 6))
         ttk.Button(actions, text="보조 프로그램 빌드", style="Secondary.TButton", command=self.build_helper).pack(side=tk.LEFT, padx=(0, 10))
         ttk.Button(actions, text="DLL 확인", style="Secondary.TButton", command=self.check_dll).pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Button(actions, text="로그인 확인", style="Secondary.TButton", command=self.check_login).pack(side=tk.LEFT, padx=(0, 10))
         ttk.Button(actions, text="현재가 조회", style="Primary.TButton", command=self.get_quote).pack(side=tk.LEFT, padx=(0, 10))
         ttk.Button(actions, text="감시 1회 점검", style="Primary.TButton", command=self.run_dry_monitor).pack(side=tk.LEFT)
         safety_actions = tk.Frame(action_card.inner, bg="#242424")
@@ -156,8 +160,18 @@ class DesktopApp(tk.Tk):
         ttk.Button(safety_actions, text="비상정지", style="Secondary.TButton", command=self.emergency_stop).pack(side=tk.LEFT, padx=(0, 10))
         ttk.Button(safety_actions, text="비상정지 해제", style="Secondary.TButton", command=self.clear_emergency_stop).pack(side=tk.LEFT)
 
+        status_card = self._card(main)
+        status_card.grid(row=2, column=0, sticky="ew", pady=(0, 14))
+        status_card.inner.columnconfigure(0, weight=1)
+        status_card.inner.columnconfigure(1, weight=1)
+        status_card.inner.columnconfigure(2, weight=1)
+        self._card_title(status_card.inner, "상태 표시", "로그인 성공 여부와 현재가를 바로 확인합니다.")
+        self._status_value(status_card.inner, 1, 0, self.dll_state)
+        self._status_value(status_card.inner, 1, 1, self.login_state)
+        self._status_value(status_card.inner, 1, 2, self.quote_state)
+
         trading_card = self._card(main)
-        trading_card.grid(row=2, column=0, sticky="ew", pady=(0, 14))
+        trading_card.grid(row=3, column=0, sticky="ew", pady=(0, 14))
         trading_card.inner.columnconfigure(1, weight=1)
         trading_card.inner.columnconfigure(3, weight=1)
         self._card_title(trading_card.inner, "매매 테스트", "정해둔 가격 조건으로 모의 주문만 기록합니다.")
@@ -169,7 +183,7 @@ class DesktopApp(tk.Tk):
         self._small_row(trading_card.inner, 3, 2, "조회 간격(초)", self.poll_seconds)
 
         status_bar = tk.Frame(main, bg="#202020", highlightthickness=1, highlightbackground="#3a3a3a")
-        status_bar.grid(row=3, column=0, sticky="ew", pady=(0, 12))
+        status_bar.grid(row=4, column=0, sticky="ew", pady=(0, 12))
         tk.Label(
             status_bar,
             textvariable=self.status_text,
@@ -181,7 +195,7 @@ class DesktopApp(tk.Tk):
         ).pack(side=tk.LEFT)
 
         log_card = self._card(main)
-        log_card.grid(row=4, column=0, sticky="nsew")
+        log_card.grid(row=5, column=0, sticky="nsew")
         log_card.inner.rowconfigure(1, weight=1)
         log_card.inner.columnconfigure(0, weight=1)
         self._card_title(log_card.inner, "실행 기록", "조회 결과와 오류 메시지가 여기에 표시됩니다.")
@@ -300,17 +314,31 @@ class DesktopApp(tk.Tk):
             row=row, column=column + 1, sticky="ew", pady=7, padx=(12, 22)
         )
 
+    def _status_value(self, parent: tk.Frame, row: int, column: int, variable: tk.StringVar) -> None:
+        tk.Label(
+            parent,
+            textvariable=variable,
+            bg="#1f2a22",
+            fg="#a7ffbc",
+            font=("Malgun Gothic", 11, "bold"),
+            padx=12,
+            pady=12,
+            relief=tk.FLAT,
+            highlightthickness=1,
+            highlightbackground="#355c3d",
+        ).grid(row=row, column=column, sticky="ew", pady=(12, 0), padx=(0 if column == 0 else 10, 0))
+
     def build_helper(self) -> None:
         self._run_background("보조 프로그램 빌드", self._build_helper)
 
     def check_dll(self) -> None:
-        self._run_background("DLL 확인", lambda: self._bridge_request({"command": "ping"}))
+        self._run_background("DLL 확인", self._check_dll)
+
+    def check_login(self) -> None:
+        self._run_background("로그인 확인", self._check_login)
 
     def get_quote(self) -> None:
-        self._run_background(
-            "현재가 조회",
-            lambda: self._bridge_request({"command": "quote", "symbol": self.symbol.get().strip()}),
-        )
+        self._run_background("현재가 조회", self._get_quote)
 
     def run_dry_monitor(self) -> None:
         self._run_background("감시 1회 점검", self._run_dry_monitor)
@@ -350,6 +378,9 @@ class DesktopApp(tk.Tk):
         return "보조 프로그램 빌드가 완료되었습니다."
 
     def _bridge_request(self, payload: dict) -> str:
+        return json.dumps(self._bridge_request_dict(payload), ensure_ascii=False)
+
+    def _bridge_request_dict(self, payload: dict) -> dict:
         if not BRIDGE_EXE.exists():
             self._build_helper()
         result = subprocess.run(
@@ -368,7 +399,33 @@ class DesktopApp(tk.Tk):
         decoded = json.loads(line)
         if not decoded.get("ok"):
             raise RuntimeError(decoded.get("error", line))
-        return line
+        return decoded
+
+    def _check_dll(self) -> str:
+        decoded = self._bridge_request_dict({"command": "ping"})
+        status = decoded.get("data", {}).get("status", "")
+        if status == "dll_loaded":
+            self.after(0, lambda: self.dll_state.set("DLL: 정상 연결"))
+            return "DLL 연결 확인 성공"
+        raise RuntimeError(f"알 수 없는 DLL 상태: {decoded}")
+
+    def _check_login(self) -> str:
+        decoded = self._bridge_request_dict({"command": "login"})
+        status = decoded.get("data", {}).get("status", "")
+        if status == "login_ok":
+            self.after(0, lambda: self.login_state.set("로그인: 성공"))
+            return "로그인 확인 성공"
+        raise RuntimeError(f"알 수 없는 로그인 상태: {decoded}")
+
+    def _get_quote(self) -> str:
+        symbol = self.symbol.get().strip()
+        decoded = self._bridge_request_dict({"command": "quote", "symbol": symbol})
+        data = decoded.get("data", {})
+        price = int(data["price"])
+        returned_symbol = str(data.get("symbol", symbol))
+        self.after(0, lambda: self.login_state.set("로그인: 성공"))
+        self.after(0, lambda: self.quote_state.set(f"현재가: {returned_symbol} / {price:,}원"))
+        return f"현재가 조회 성공: {returned_symbol} {price:,}원"
 
     def _run_dry_monitor(self) -> str:
         engine = self._build_engine()
