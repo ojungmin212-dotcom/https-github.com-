@@ -70,6 +70,11 @@ Response:
 The real helper should call `wmcaQuery()` with the correct buy/sell TR only
 after mock trading has been verified.
 
+Current native helper behavior is intentionally blocked. It accepts the order
+request shape, resolves the correct TR, checks whether required order password
+environment values are present, and returns `accepted: false` with a block
+message. It does not transmit an order to Namu.
+
 Local Namu order documents in `C:\Users\Win\Desktop\openapi.nm` show these
 stock-order TR mappings:
 

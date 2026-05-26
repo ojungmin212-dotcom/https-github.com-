@@ -60,10 +60,16 @@ Keep `APIF_ENABLE_LIVE_TRADING=NO`.
 
 ## Current scope
 
-The first real API target is quote lookup only:
+The current real API target is quote lookup:
 
 - login with `wmcaConnect`
 - query `IVWUTKMST04.UNT`
 - return `stck_prpr` as integer `price`
 
-Order handling remains intentionally disabled until quote lookup is verified.
+Order requests are understood but intentionally blocked:
+
+- `BUY` resolves to stock buy TR `c8102`
+- `SELL` resolves to stock sell TR `c8101`
+- password environment values are checked for readiness
+- the helper returns `accepted:false`
+- no live order is transmitted to Namu

@@ -19,6 +19,8 @@ const DWORD CA_RECEIVECOMPLETE = WM_USER + 240;
 const DWORD CA_RECEIVEERROR = WM_USER + 250;
 
 const int TRID_QUOTE = 1;
+const int TRID_BUY_ORDER = 2;
+const int TRID_SELL_ORDER = 3;
 
 typedef BOOL(__stdcall TLoad)();
 typedef BOOL(__stdcall TFree)();
@@ -115,6 +117,42 @@ std::string json_escape(const std::string& value) {
         }
     }
     return out;
+}
+
+bool env_yes(const char* name) {
+    std::string value = env_value(name);
+    std::transform(value.begin(), value.end(), value.begin(), [](unsigned char c) {
+        return static_cast<char>(std::toupper(c));
+    });
+    return value == "YES" || value == "Y" || value == "TRUE" || value == "1";
+}
+
+std::string required_env_state() {
+    std::string missing;
+    if (env_value("APIF_NAMU_ACCOUNT_PASSWORD").empty()) {
+        missing += missing.empty() ? "APIF_NAMU_ACCOUNT_PASSWORD" : ", APIF_NAMU_ACCOUNT_PASSWORD";
+    }
+    if (env_value("APIF_NAMU_ORDER_PASSWORD_1").empty()) {
+        missing += missing.empty() ? "APIF_NAMU_ORDER_PASSWORD_1" : ", APIF_NAMU_ORDER_PASSWORD_1";
+    }
+    if (env_value("APIF_NAMU_ORDER_PASSWORD_2").empty()) {
+        missing += missing.empty() ? "APIF_NAMU_ORDER_PASSWORD_2" : ", APIF_NAMU_ORDER_PASSWORD_2";
+    }
+    return missing;
+}
+
+std::string order_tr_code(const std::string& side) {
+    if (side == "BUY") {
+        return "c8102";
+    }
+    if (side == "SELL") {
+        return "c8101";
+    }
+    throw std::runtime_error("side must be BUY or SELL.");
+}
+
+std::string order_tr_name(const std::string& side) {
+    return side == "BUY" ? "stock buy order" : "stock sell order";
 }
 
 void send_ok(const std::string& data_json) {
@@ -344,7 +382,36 @@ int main() {
             return 0;
         }
         if (command == "order") {
-            send_error("Order handling is disabled in the native bridge draft.");
+            std::string symbol = json_get(raw, "symbol");
+            std::string side = json_get(raw, "side");
+            std::string price = json_get(raw, "price");
+            std::string quantity = json_get(raw, "quantity");
+            if (symbol.empty() || side.empty() || price.empty() || quantity.empty()) {
+                send_error("symbol, side, price, and quantity are required.");
+                return 0;
+            }
+
+            std::string tr_code = order_tr_code(side);
+            std::string missing = required_env_state();
+            bool live_enabled = env_yes("APIF_ENABLE_LIVE_TRADING");
+
+            std::ostringstream data;
+            data << "{\"accepted\":false,"
+                 << "\"order_id\":\"\","
+                 << "\"tr_code\":\"" << tr_code << "\","
+                 << "\"tr_name\":\"" << order_tr_name(side) << "\","
+                 << "\"symbol\":\"" << json_escape(symbol) << "\","
+                 << "\"side\":\"" << json_escape(side) << "\","
+                 << "\"price\":" << std::atoi(price.c_str()) << ","
+                 << "\"quantity\":" << std::atoi(quantity.c_str()) << ",";
+            if (!missing.empty()) {
+                data << "\"message\":\"Live order blocked. Missing: " << json_escape(missing) << "\"}";
+            } else if (!live_enabled) {
+                data << "\"message\":\"Live order blocked. APIF_ENABLE_LIVE_TRADING is not YES.\"}";
+            } else {
+                data << "\"message\":\"Live order blocked. Native order transmission is not enabled in this safety build.\"}";
+            }
+            send_ok(data.str());
             return 0;
         }
         if (command != "quote") {
