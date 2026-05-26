@@ -67,8 +67,19 @@ Response:
 }
 ```
 
-The real helper should call `wmcaQuery()` with `c8102` only after mock trading
-has been verified.
+The real helper should call `wmcaQuery()` with the correct buy/sell TR only
+after mock trading has been verified.
+
+Local Namu order documents in `C:\Users\Win\Desktop\openapi.nm` show these
+stock-order TR mappings:
+
+- `c8101`: stock sell order
+- `c8102`: stock buy order
+
+Both order types require the account password hash and separate order/trading
+password hashes. The controller therefore keeps live order transmission blocked
+until those password fields, order confirmation, duplicate-order prevention,
+and fill confirmation are implemented.
 
 ## Local mock helper
 

@@ -13,8 +13,9 @@ from tkinter import messagebox, ttk
 
 from .broker import DryRunBroker
 from .engine import TradingEngine
-from .models import TradingPlan
+from .models import OrderRequest, Side, TradingPlan
 from .namu_qv import NamuQvQuoteProvider, NamuQvSession
+from .order_preview import build_native_order_preview
 from .settings import NamuQvSettings, load_dotenv_file
 
 
@@ -49,6 +50,8 @@ class DesktopApp(tk.Tk):
         self.sell_price = tk.StringVar(value="75000")
         self.quantity = tk.StringVar(value="1")
         self.poll_seconds = tk.StringVar(value="3")
+        self.account_index = tk.StringVar(value="1")
+        self.market_code = tk.StringVar(value="SOR")
         self.status_text = tk.StringVar(value="대기 중")
         self.dll_state = tk.StringVar(value="DLL: 미확인")
         self.login_state = tk.StringVar(value="로그인: 미확인")
@@ -152,7 +155,8 @@ class DesktopApp(tk.Tk):
         ttk.Button(actions, text="DLL 확인", style="Secondary.TButton", command=self.check_dll).pack(side=tk.LEFT, padx=(0, 10))
         ttk.Button(actions, text="로그인 확인", style="Secondary.TButton", command=self.check_login).pack(side=tk.LEFT, padx=(0, 10))
         ttk.Button(actions, text="현재가 조회", style="Primary.TButton", command=self.get_quote).pack(side=tk.LEFT, padx=(0, 10))
-        ttk.Button(actions, text="감시 1회 점검", style="Primary.TButton", command=self.run_dry_monitor).pack(side=tk.LEFT)
+        ttk.Button(actions, text="감시 1회 점검", style="Primary.TButton", command=self.run_dry_monitor).pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Button(actions, text="실주문 전 점검", style="Secondary.TButton", command=self.preview_live_order).pack(side=tk.LEFT)
         safety_actions = tk.Frame(action_card.inner, bg="#242424")
         safety_actions.grid(row=2, column=0, columnspan=2, sticky="ew", pady=(6, 2))
         ttk.Button(safety_actions, text="감시 시작", style="Primary.TButton", command=self.start_monitor).pack(side=tk.LEFT, padx=(0, 10))
@@ -181,6 +185,8 @@ class DesktopApp(tk.Tk):
         self._small_row(trading_card.inner, 2, 2, "손절가", self.stop_loss_price)
         self._small_row(trading_card.inner, 3, 0, "매도가", self.sell_price)
         self._small_row(trading_card.inner, 3, 2, "조회 간격(초)", self.poll_seconds)
+        self._small_row(trading_card.inner, 4, 0, "계좌 순번", self.account_index)
+        self._small_row(trading_card.inner, 4, 2, "시장 코드", self.market_code)
 
         status_bar = tk.Frame(main, bg="#202020", highlightthickness=1, highlightbackground="#3a3a3a")
         status_bar.grid(row=4, column=0, sticky="ew", pady=(0, 12))
@@ -343,6 +349,9 @@ class DesktopApp(tk.Tk):
     def run_dry_monitor(self) -> None:
         self._run_background("감시 1회 점검", self._run_dry_monitor)
 
+    def preview_live_order(self) -> None:
+        self._run_background("실주문 전 점검", self._preview_live_order)
+
     def start_monitor(self) -> None:
         if self.monitor_stop_event.is_set():
             self.monitor_stop_event.clear()
@@ -430,6 +439,57 @@ class DesktopApp(tk.Tk):
     def _run_dry_monitor(self) -> str:
         engine = self._build_engine()
         return engine.evaluate_once()
+
+    def _preview_live_order(self) -> str:
+        symbol = self.symbol.get().strip()
+        quantity = int(self.quantity.get())
+        account_index = int(self.account_index.get())
+        market_code = self.market_code.get().strip()
+        previews = [
+            build_native_order_preview(
+                OrderRequest(
+                    symbol=symbol,
+                    side=Side.BUY,
+                    price=int(self.buy_price.get()),
+                    quantity=quantity,
+                ),
+                market_code=market_code,
+                account_index=account_index,
+            ),
+            build_native_order_preview(
+                OrderRequest(
+                    symbol=symbol,
+                    side=Side.SELL,
+                    price=int(self.sell_price.get()),
+                    quantity=quantity,
+                ),
+                market_code=market_code,
+                account_index=account_index,
+            ),
+        ]
+        if self.stop_loss_price.get().strip():
+            previews.append(
+                build_native_order_preview(
+                    OrderRequest(
+                        symbol=symbol,
+                        side=Side.SELL,
+                        price=int(self.stop_loss_price.get()),
+                        quantity=quantity,
+                    ),
+                    market_code=market_code,
+                    account_index=account_index,
+                )
+            )
+
+        lines = [
+            "실주문 전 점검 결과",
+            "현재 프로그램은 실제 주문 전송을 차단한 상태입니다.",
+            "주문 비밀번호는 계좌 비밀번호와 다르므로, 다음 단계에서 별도 입력칸으로 분리합니다.",
+        ]
+        for preview in previews:
+            lines.append("")
+            lines.extend(preview.to_log_lines())
+        return "\n".join(lines)
 
     def _run_monitor_loop(self) -> str:
         self.monitor_stop_event.clear()
