@@ -44,6 +44,9 @@ class DesktopApp(tk.Tk):
         self.user_id = tk.StringVar(value=os.getenv("APIF_NAMU_USER_ID", ""))
         self.user_password = tk.StringVar()
         self.cert_password = tk.StringVar()
+        self.account_password = tk.StringVar()
+        self.order_password_1 = tk.StringVar()
+        self.order_password_2 = tk.StringVar()
         self.symbol = tk.StringVar(value="005930")
         self.buy_price = tk.StringVar(value="70000")
         self.stop_loss_price = tk.StringVar(value="68000")
@@ -145,6 +148,9 @@ class DesktopApp(tk.Tk):
         self._row(connection_card.inner, 2, "HTS/OpenAPI 아이디", self.user_id, show=None)
         self._row(connection_card.inner, 3, "HTS/OpenAPI 비밀번호", self.user_password, show="*")
         self._row(connection_card.inner, 4, "인증서 비밀번호", self.cert_password, show="*")
+        self._row(connection_card.inner, 5, "계좌 비밀번호", self.account_password, show="*")
+        self._row(connection_card.inner, 6, "주문 비밀번호 1", self.order_password_1, show="*")
+        self._row(connection_card.inner, 7, "주문 비밀번호 2", self.order_password_2, show="*")
 
         action_card = self._card(main)
         action_card.grid(row=1, column=0, sticky="ew", pady=(0, 14))
@@ -484,7 +490,10 @@ class DesktopApp(tk.Tk):
         lines = [
             "실주문 전 점검 결과",
             "현재 프로그램은 실제 주문 전송을 차단한 상태입니다.",
-            "주문 비밀번호는 계좌 비밀번호와 다르므로, 다음 단계에서 별도 입력칸으로 분리합니다.",
+            f"계좌 비밀번호: {self._secret_state(self.account_password)}",
+            f"주문 비밀번호 1: {self._secret_state(self.order_password_1)}",
+            f"주문 비밀번호 2: {self._secret_state(self.order_password_2)}",
+            "주문 비밀번호는 계좌 비밀번호와 다릅니다. 실제 주문 전에는 반드시 각각 따로 입력해야 합니다.",
         ]
         for preview in previews:
             lines.append("")
@@ -539,6 +548,9 @@ class DesktopApp(tk.Tk):
         env["APIF_NAMU_USER_ID"] = self.user_id.get().strip()
         env["APIF_NAMU_USER_PASSWORD"] = self.user_password.get()
         env["APIF_NAMU_CERT_PASSWORD"] = self.cert_password.get()
+        env["APIF_NAMU_ACCOUNT_PASSWORD"] = self.account_password.get()
+        env["APIF_NAMU_ORDER_PASSWORD_1"] = self.order_password_1.get()
+        env["APIF_NAMU_ORDER_PASSWORD_2"] = self.order_password_2.get()
         env["APIF_ENABLE_LIVE_TRADING"] = "NO"
         return env
 
@@ -568,6 +580,10 @@ class DesktopApp(tk.Tk):
         timestamp = datetime.now().strftime("%H:%M:%S")
         self.output.insert(tk.END, f"[{timestamp}] {message}\n")
         self.output.see(tk.END)
+
+    @staticmethod
+    def _secret_state(variable: tk.StringVar) -> str:
+        return "입력됨" if variable.get() else "미입력"
 
     @staticmethod
     def _pick_font(candidates: list[str]) -> str:
